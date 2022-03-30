@@ -6,4 +6,5 @@ from SturdyBotHW3Starter import SturdyBot
 config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D}
 testBot = SturdyBot('testy', config)
 
-testBot.pointerTurnBy(-120, speed=20)
+testBot.pointerTurnBy(1500, speed=20)
+testBot.pointerTurnBy(-1500, speed=20)
