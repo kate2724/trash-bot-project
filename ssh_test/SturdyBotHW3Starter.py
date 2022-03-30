@@ -224,7 +224,7 @@ class SturdyBot(object):
         """Given an angle, turn counter-clockwise by that many degrees (negative
         values cause clockwise turn. Speed input is optional."""
         assert -100.0 <= speed <= 100.0
-        self.mediumMotor.on_for_degrees(angle, speed)
+        self.mediumMotor.on_for_degrees(speed, angle)
 
 
     def pointerTurnTo(self, angle):
