@@ -155,7 +155,6 @@ class SturdyBot(object):
         else:
             self.tankMover.on_for_seconds(speed, speed, runTime)
 
-
     def backward(self, speed, runTime=None):
         """Make the robot to move backward with the given speed"""
         # This method will call the forward method with a negative speed
@@ -173,7 +172,6 @@ class SturdyBot(object):
         else:
             self.tankMover.on_for_seconds(-speed, speed, runTime)
 
-
     def turnRight(self, speed, runTime=None):
         """Make the robot to turn right in place with the given speed.
                 If there is no given time, the robot keeps turning forever"""
@@ -183,7 +181,6 @@ class SturdyBot(object):
             self.tankMover.on(speed, -speed)
         else:
             self.tankMover.on_for_seconds(speed, -speed, runTime)
-
 
     def stop(self):
         """Turns off the motors."""
@@ -203,11 +200,9 @@ class SturdyBot(object):
         else:
             self.tankMover.on_for_seconds(leftSpeed, rightSpeed, runTime)
 
-
     def zeroPointer(self):
         """Turns the medium motor/pointer to the zero angle position. """
         self.mediumMotor.on_to_position(30, 0)
-
 
     def pointerTurn(self, speed=50.0, runTime=None):
         """Turns the medium moter counter-clockwise at the given speed, stopping
@@ -219,19 +214,16 @@ class SturdyBot(object):
         else:
             self.mediumMotor.on_for_seconds(speed, runTime)
 
-
     def pointerTurnBy(self, angle, speed=50.0):
         """Given an angle, turn counter-clockwise by that many degrees (negative
         values cause clockwise turn. Speed input is optional."""
         assert -100.0 <= speed <= 100.0
         self.mediumMotor.on_for_degrees(speed, angle)
 
-
     def pointerTurnTo(self, angle):
         """Turns to the specified angle"""
         assert 0 <= angle <= 360
         self.mediumMotor.on_to_position(30.0, angle)
-
 
 # Sample of how to use this
 if __name__ == "__main__":
