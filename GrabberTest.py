@@ -12,7 +12,7 @@ testBot = SturdyBot('testy', config)
 bttn = testBot.bttn
 
 while not bttn.backspace:
-    if bttn.up:
+    if bttn.left:
         testBot.pointerTurnBy(100, speed=20)
-    elif bttn.down:
+    elif bttn.right:
         testBot.pointerTurnBy(-100, speed=20)
