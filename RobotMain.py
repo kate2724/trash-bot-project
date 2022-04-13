@@ -3,18 +3,18 @@ from ev3dev2.sensor import INPUT_1, INPUT_2, INPUT_3, INPUT_4
 from SturdyBotHW3Starter import SturdyBot
 import time
 
-config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D}
+config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D, "color-sensor":INPUT_1}
 mainBot = SturdyBot('mainBot', config)
 
-def setup():
+def setup(time_limit):
     startTime = time.time()
     elapsedTime = 0.0
-    time_limit= 15
 
     while elapsedTime < time_limit:
         step()
         elapsedTime = time.time() - startTime
         light = mainBot.readReflect()
+        print("light", light)
         if light >= 10:
             print("Success! elapsed time:", elapsedTime)
             mainBot.stop()
@@ -29,3 +29,5 @@ def setup():
 
 def step():
     mainBot.forward(10)
+
+setup(20)

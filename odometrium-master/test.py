@@ -1,4 +1,4 @@
-from main import get_position_delta
+from odometry import get_position_delta
 from math import pi, sqrt
 
 
