@@ -32,14 +32,15 @@ if frame is not None:
     (hgt, wid, dep) = frame.shape
     # frame = cv2.resize(frame, dsize = (0, 0), fx = 0.5, fy = 0.5)
     # frame = getNextFrame(cam)
-    cv2.namedWindow('camshift')
-    cv2.namedWindow('hist')
-    cv2.moveWindow('hist', 700, 100)  # Move to reduce overlap
+    cv2.namedWindow('ball detection')
+    # cv2.namedWindow('hist')
+    # cv2.moveWindow('hist', 700, 100)  # Move to reduce overlap
 
     # Initialize the track window to be the whole frame
     track_window = (0, 0, wid, hgt)
 
     # Initialize the histogram from the stored image
+
     # Here I am faking a stored image with just a couple of blue colors in an array
     # you would want to read the image in from the file instead
     histImage = np.array([[[110, 70, 50]],
@@ -53,11 +54,13 @@ if frame is not None:
                           [[125, 129, 199]],
                           [[128, 81, 78]],
                           [[130, 183, 111]]], np.uint8)
+
     maskedHistIm = cv2.inRange(histImage, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
     hist = cv2.calcHist([histImage], [0], maskedHistIm, [16], [0, 180])
     cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
+
     hist = hist.reshape(-1)
-    show_hist(hist)
+    # show_hist(hist)
 
     # start processing frames
     while True:
