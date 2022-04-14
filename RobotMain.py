@@ -3,7 +3,7 @@ from ev3dev2.sensor import INPUT_1, INPUT_2, INPUT_3, INPUT_4
 from SturdyBotHW3Starter import SturdyBot
 import time
 
-config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D, "color-sensor":INPUT_1}
+config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D, "color-sensor":INPUT_1,"gyro-sensor":INPUT_2}
 mainBot = SturdyBot('mainBot', config)
 
 def setup(time_limit):
