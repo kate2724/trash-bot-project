@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-frame = None
+
 cam = cv2.VideoCapture(0)
 ret, frame = cam.read()
 objectFound = False
@@ -9,7 +9,8 @@ if frame is not None:
     while True:
         ret, frame = cam.read()
         hsv=cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-        # cv2.imshow("hue?", img2)
+        # cv2.imshow("hue", img2)
+
         # img3= cv2.inRange(img2, (100,50,40), (255,100,100))
         blueFiltered = cv2.inRange(hsv, (100, 100, 40), (150, 240, 230))
 
@@ -23,14 +24,22 @@ if frame is not None:
         if(contrs is not None):
             c = max(contrs, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
+            print("coordinates: ", x,y,w,h)
+            # actual coordinates are (x,y),(x+w,y), (x,y+h), (x+w,y+h)
+            # robot turns until coordinates are centered
+            # robot forward until area of coordinates passes certain threshold (means the robot is close enough)
+            # robot grabs object
+            # robot turns until it sees dumpster flag
+            # same process as before, until it reaches dumpster
 
             # draw the biggest contour (c) in green
             if(cv2.contourArea(c)>1250):
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                rectangle = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 objectFound=True
             else:
                 objectFound=False
             cv2.imshow('Contours', frame)
+
         print("object Found: ", objectFound)
         ch = chr(0xFF & cv2.waitKey(5))
         if ch == 'q':
