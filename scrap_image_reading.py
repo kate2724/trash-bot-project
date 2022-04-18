@@ -21,7 +21,7 @@ if frame is not None:
         # contrs, hier = cv2.findContours(redFiltered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         # cv2.drawContours(frame, contrs, -1, (0, 255, 0), 3)
 
-        if(contrs is not None):
+        if len(contrs) > 0:
             c = max(contrs, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
             print("coordinates: ", x,y,w,h)
@@ -38,9 +38,9 @@ if frame is not None:
                 objectFound=True
             else:
                 objectFound=False
-            cv2.imshow('Contours', frame)
+        cv2.imshow('Contours', frame)
 
-        print("object Found: ", objectFound)
+        # print("object Found: ", objectFound)
         ch = chr(0xFF & cv2.waitKey(5))
         if ch == 'q':
             break
