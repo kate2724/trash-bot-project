@@ -4,6 +4,7 @@ import numpy as np
 cam = cv2.VideoCapture(0)
 ret, frame = cam.read()
 objectFound = False
+objectGrabbable = False
 
 if frame is not None:
     while True:
@@ -20,6 +21,12 @@ if frame is not None:
         contrsRed, hierRed = cv2.findContours(redFiltered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         # cv2.drawContours(frame, contrs, -1, (0, 255, 0), 3)
 
+        xMin = 100
+        yMin = 320
+        xMax = 520
+        yMax = 479
+        grabbingBox = cv2.rectangle(frame, (xMin, yMin), (xMax, yMax), (255, 255, 255), 2)
+
         if len(contrsBlue) > 0:
             cBlue = max(contrsBlue, key=cv2.contourArea)
             xBlue, yBlue, wBlue, hBlue = cv2.boundingRect(cBlue)
@@ -32,25 +39,28 @@ if frame is not None:
 
             # draw the biggest contour (c) in green
             if cv2.contourArea(cBlue) > 1250:
-                rectangle = cv2.rectangle(frame, (xBlue, yBlue), (xBlue + wBlue, yBlue + hBlue), (0, 255, 0), 2)
-                print("blue coordinates: ", xBlue, yBlue, wBlue, hBlue)
+                blueRectangle = cv2.rectangle(frame, (xBlue, yBlue), (xBlue + wBlue, yBlue + hBlue), (0, 255, 0), 2)
+                # print("blue coordinates: ", xBlue, yBlue, wBlue, hBlue)
                 objectFound = True
+                if (xBlue > xMin and xBlue < xMax and yBlue > yMin and yBlue < yMax):
+                    print("within range")
+                    objectGrabbable = True
+                else:
+                    objectGrabbable = False
             else:
                 objectFound = False
 
         if len(contrsRed) > 0:
             cRed = max(contrsRed, key=cv2.contourArea)
             xRed, yRed, wRed, hRed = cv2.boundingRect(cRed)
-
             # draw the biggest contour (c) in blue
             if cv2.contourArea(cRed) > 1250:
-                rectangle = cv2.rectangle(frame, (xRed, yRed), (xRed + wRed, yRed + hRed), (255, 0, 0), 2)
+                redRectangle = cv2.rectangle(frame, (xRed, yRed), (xRed + wRed, yRed + hRed), (255, 0, 0), 2)
                 print("red coordinates: ", xRed, yRed, wRed, hRed)
                 objectFound = True
             else:
                 objectFound = False
         cv2.imshow('Contours', frame)
-
         # print("object Found: ", objectFound)
         ch = chr(0xFF & cv2.waitKey(5))
         if ch == 'q':
