@@ -10,10 +10,10 @@ if frame is not None:
     while True:
         ret, frame = cam.read()
         hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-        # cv2.imshow("hsv", hsv)
+        cv2.imshow("hsv", hsv)
 
-        blueFiltered = cv2.inRange(hsv, (100, 100, 40), (150, 240, 230))
-        redFiltered = cv2.inRange(hsv, (150, 100, 115), (190, 210, 170))
+        blueFiltered = cv2.inRange(hsv, (100, 100, 0), (150, 240, 230))
+        redFiltered = cv2.inRange(hsv, (150, 70, 115), (190, 210, 220))
         # cv2.imshow("final", blueFiltered)
         # cv2.imshow("final", redFiltered)
 
