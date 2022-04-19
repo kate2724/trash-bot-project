@@ -12,7 +12,7 @@ if frame is not None:
         hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
         cv2.imshow("hsv", hsv)
 
-        blueFiltered = cv2.inRange(hsv, (100, 100, 0), (150, 240, 230))
+        blueFiltered = cv2.inRange(hsv, (100, 100, 0), (150, 255, 230))
         redFiltered = cv2.inRange(hsv, (150, 70, 115), (190, 210, 220))
         # cv2.imshow("final", blueFiltered)
         # cv2.imshow("final", redFiltered)
@@ -54,7 +54,7 @@ if frame is not None:
             cRed = max(contrsRed, key=cv2.contourArea)
             xRed, yRed, wRed, hRed = cv2.boundingRect(cRed)
             # draw the biggest contour (c) in blue
-            if cv2.contourArea(cRed) > 1250:
+            if cv2.contourArea(cRed) > 1000:
                 redRectangle = cv2.rectangle(frame, (xRed, yRed), (xRed + wRed, yRed + hRed), (255, 0, 0), 2)
                 print("red coordinates: ", xRed, yRed, wRed, hRed)
                 objectFound = True
