@@ -5,6 +5,7 @@ from ev3dev2.sensor import Sensor
 from ev3dev2.port import LegoPort
 from SturdyBotHW3Starter import SturdyBot
 import time
+
 from dataclasses import dataclass
 
 class TrashBot:
@@ -13,15 +14,17 @@ class TrashBot:
                   "gyro-sensor":INPUT_2, "ultra-sensor":INPUT_3}
         self.mainBot = SturdyBot('mainBot', config)
         self.pixy = Sensor(INPUT_1)
-        self.pixy.mode = 'SIG1'
         self.initialize()
         self.state, self.foundTrash, self.remainingTrash, self.sensorResult, self.halt = (None for i in range(5))
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.GRABBER_CENTROID = (160, 170)
         self.GRABBER_DIMS = (100, 20) # TODO: these grabber constants are completely arbitrary
+        self.grabber_hmap = linearMap(min_in=-160, max_in=160, min_out=-5, max_out=5)
+        self.grabber_vmap = linearMap(min_in=-30, max_in=30, min_out=-5, max_out=5, inverse=True)
 
     def initialize(self):
         self.state = "looking for trash"
+        self.pixy.mode = 'SIG1'
         self.foundTrash = []
         self.remainingTrash = ['blue']
         self.sensorResult = None
@@ -84,7 +87,7 @@ class TrashBot:
 
         if s.sensorResult.foundTrash:
             # come back to this
-            if("""trash within range"""):
+            if s.sensorResult.withinGrabber:
                 s.state = "grabbing trash"
                 s.grabTrash()
             else:
@@ -93,25 +96,58 @@ class TrashBot:
             s.wander()
 
     def wander(s):
-        if s.mainBot.readDistance()<30:
+        if s.mainBot.readDistance() < 30:
             s.mainBot.turnLeft(10)
             leftDistance = s.mainBot.readDistance()
             s.mainBot.turnRight(10)
             s.mainBot.turnRight(10)
             rightDistance = s.mainBot.readDistance
 
-            if(leftDistance > rightDistance):
+            if leftDistance > rightDistance:
                 s.mainBot.turnLeft(10)
                 s.mainBot.turnLeft(10)
         else:
             s.mainBot.forward(10)
 
-    def transportTrash(s):
+    def grabTrash(s):
+        # do stuff
+        s.state = "transporting trash"
         s.pixy.mode = 'SIG2'
-        floorReflectance = s.mainBot.readReflect()
-        if floorReflectance>20:
-            s.state == "releasing trash"
 
+    def transportTrash(s):
+        floorReflectance = s.mainBot.readReflect()
+        if floorReflectance > 20:  # detects the dumpster
+            s.state = "releasing trash"
+            s.releaseTrash()
+
+    def releaseTrash(s):
+        # do stuff
+        s.state = "looking for trash"
+        s.pixy.mode = "SIG1"
+
+    def fineTunePosition(s):
+        # this method will only be called when the trash isn't already within the grabber's claw
+        # it should also only be called when there is definitely a trash object (trashList not empty)
+        trash = s.sensorResult.trashList[0]
+        grabber_x, grabber_y = s.GRABBER_CENTROID
+
+        horizontal_diff = (trash.x - grabber_x)  # this is negative when the bot needs to turn left
+        vertical_diff = (trash.y - grabber_y)  # this is negative when the bot needs to drive forward
+        horizontal_impulse = s.grabber_hmap(horizontal_diff)  # maps negatives to negatives
+        vertical_impulse = s.grabber_vmap(vertical_diff)  # maps negatives to positives
+
+        # if the left motor < power than right motor, then bot turns left.
+        # so, if horizontal_impulse is negative, these eqns give left_speed < right_speed
+        left_speed = vertical_impulse + horizontal_impulse
+        right_speed = vertical_impulse - horizontal_impulse
+
+        s.mainBot.curve(left_speed, right_speed)
+
+        # want to minimize abs(trash.x - grabber_x) (and y).
+        # can minimize x's by turning left or right
+        # can minimize y's by driving forward or back
+        # should slow down as it approaches the correct position
+        # should tend towards overshooting?
 
 
 
@@ -126,6 +162,21 @@ def withinRect(centroid, dims, x, y):
         return False
     return True
     # jesus this is the worst possible way to evaluate this
+
+def linearMap(min_in, max_in, min_out, max_out, inverse=False):
+    def map(x):
+        if x <= min_in:
+            input_distance = 0
+        elif x >= max_in:
+            input_distance = 1
+        else:
+            input_distance = (x - min_in) / (max_in - min_in)
+        output_range = max_out - min_out
+        if inverse:
+            return max_out - input_distance * output_range
+        else:
+            return min_out + input_distance * output_range
+    return map
 
 @dataclass
 class SensorReading:
