@@ -7,6 +7,7 @@ from SturdyBotHW3Starter import SturdyBot
 import time
 
 from dataclasses import dataclass
+from enum import Enum, unique
 
 class TrashBot:
     def __init__(self):
@@ -28,7 +29,7 @@ class TrashBot:
         self.PIXY_DUMPSTER_MODE = "SIG2"
 
     def initialize(self):
-        self.state = "looking for trash"
+        self.state = State.SEARCHING_FOR_TRASH
         self.pixy.mode = self.PIXY_TRASH_MODE
         self.foundTrash = []
         self.remainingTrash = ['blue']
@@ -85,21 +86,21 @@ class TrashBot:
         s.mainBot.stop()
 
     def cleanUpStep(s):
-        if s.state == "looking for trash":
+        if s.state is State.SEARCHING_FOR_TRASH:
             s.searchForTrash()
-        elif s.state == "grabbing trash":
+        elif s.state is State.GRABBING_TRASH:
             s.grabTrash()
-        elif s.state == "looking for dumpster":
+        elif s.state is State.SEARCHING_FOR_DUMPSTER:
             s.searchForDumspter()
-        elif s.state == "transporting trash":
+        elif s.state is State.TRANSPORTING_TRASH:
             s.transportTrash()
-        elif s.state == "releasing trash":
+        elif s.state is State.RELEASING_TRASH:
             s.releaseTrash()
 
     def searchForTrash(s):
         if s.sensorResult.seesTrash:
             if s.sensorResult.withinGrabber:
-                s.state = "grabbing trash"
+                s.state = State.GRABBING_TRASH
                 s.grabTrash()
             else:
                 s.fineTunePosition()
@@ -123,7 +124,7 @@ class TrashBot:
     def searchForDumspter(s):
         currentAngle = s.mainBot.readGyroAngle()
         if abs(s.originalAngle - currentAngle) > 359 or s.sensorResult.foundDumpster:
-            s.state = "transporting trash"
+            s.state = State.TRANSPORTING_TRASH
         else:
             s.mainBot.turnRight(4)
 
@@ -131,7 +132,7 @@ class TrashBot:
         floorReflectance = s.mainBot.readReflect()
         reachedDumpster = floorReflectance > 20
         if reachedDumpster:
-            s.state = "releasing trash"
+            s.state = State.RELEASING_TRASH
             s.releaseTrash()
         else:
             if s.sensorResult.foundDumpster:
@@ -173,12 +174,12 @@ class TrashBot:
 
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
-        s.state = "looking for trash"
+        s.state = State.SEARCHING_FOR_TRASH
         s.pixy.mode = s.PIXY_TRASH_MODE
 
     def grabTrash(s):
         s.mainBot.pointerTurnBy(-100, speed=20)
-        s.state = "looking for dumpster"
+        s.state = State.SEARCHING_FOR_DUMPSTER
         s.originalAngle = s.mainBot.readGyroAngle()
         s.pixy.mode = s.PIXY_DUMPSTER_MODE
 
@@ -208,6 +209,14 @@ def linearMap(min_in, max_in, min_out, max_out, inverse=False):
         else:
             return min_out + input_distance * output_range
     return map
+
+@unique
+class State(Enum):
+    SEARCHING_FOR_TRASH = "searching for trash"
+    GRABBING_TRASH = "grabbing trash"
+    SEARCHING_FOR_DUMPSTER = "searching for dumpster"
+    TRANSPORTING_TRASH = "transporting trash"
+    RELEASING_TRASH = "releasing trash"
 
 @dataclass
 class SensorReading:
