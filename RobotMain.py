@@ -149,7 +149,7 @@ class TrashBot:
         horizontal_diff = (trash.x - grabber_x)  # this is negative when the bot needs to turn left
         vertical_diff = (trash.y - grabber_y)  # this is negative when the bot needs to drive forward
         horizontal_impulse = s.grabber_hmap(horizontal_diff)  # maps negatives to negatives
-        vertical_impulse = s.grabber_vmap(vertical_diff)  # maps negatives to positives
+        vertical_impulse = s.grabber_vmap(vertical_diff) + 1  # maps negatives to positives
 
         # if the left motor < power than right motor, then bot turns left.
         # so, if horizontal_impulse is negative, these eqns give left_speed < right_speed
@@ -170,6 +170,7 @@ class TrashBot:
 
     def goToDumpster(s, dumpLocation):
         # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
+
         pass
 
     def releaseTrash(s):
