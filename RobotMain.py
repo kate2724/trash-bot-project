@@ -33,7 +33,7 @@ class TrashBot:
     def sense(self):
         trashList = []
 
-        # do thing. should fill with 'TrashObject' objects
+        # do thing. should fill with 'TrashObject' objects based on objects camera can see
 
         seesTrash = len(trashList) > 0
 
@@ -101,7 +101,7 @@ class TrashBot:
             leftDistance = s.mainBot.readDistance()
             s.mainBot.turnRight(10)
             s.mainBot.turnRight(10)
-            rightDistance = s.mainBot.readDistance
+            rightDistance = s.mainBot.readDistance()
 
             if leftDistance > rightDistance:
                 s.mainBot.turnLeft(10)
@@ -109,21 +109,27 @@ class TrashBot:
         else:
             s.mainBot.forward(10)
 
-    def grabTrash(s):
-        # do stuff
-        s.state = "transporting trash"
-        s.pixy.mode = 'SIG2'
-
     def transportTrash(s):
+        flagFound= False
         floorReflectance = s.mainBot.readReflect()
-        if floorReflectance > 20:  # detects the dumpster
+        reachedDumpster = floorReflectance>20
+        if reachedDumpster:
             s.state = "releasing trash"
             s.releaseTrash()
+        else:
+            originalAngle = s.mainBot.readGyroAngle()
+            currentAngle = s.mainBot.readGyroAngle()
+            while abs(originalAngle - currentAngle)<359 and flagFound==False:
+                s.mainBot.turnRight(4)
+                currentAngle = s.mainBot.readGyroAngle()
+                if("found flag"):
+                    # re
+                    flagFound = True
 
-    def releaseTrash(s):
-        # do stuff
-        s.state = "looking for trash"
-        s.pixy.mode = "SIG1"
+            if flagFound:
+                s.goToDumpster()
+            else:
+                s.wander()
 
     def fineTunePosition(s):
         # this method will only be called when the trash isn't already within the grabber's claw
@@ -148,6 +154,19 @@ class TrashBot:
         # can minimize y's by driving forward or back
         # should slow down as it approaches the correct position
         # should tend towards overshooting?
+
+    def goToDumpster(s):
+        pass
+
+    def releaseTrash(s):
+        s.mainBot.pointerTurnBy(100, speed=20)
+        s.state = "looking for trash"
+        s.pixy.mode = "SIG1"
+
+    def grabTrash(s):
+        s.mainBot.pointerTurnBy(-100, speed=20)
+        s.state = "transporting trash"
+        s.pixy.mode = 'SIG2'
 
 
 
