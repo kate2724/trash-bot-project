@@ -108,6 +108,10 @@ class TrashBot:
 
     def transportTrash(s):
         s.pixy.mode = 'SIG2'
+        floorReflectance = s.mainBot.readReflect()
+        if floorReflectance>20:
+            s.state == "releasing trash"
+
 
 
 
