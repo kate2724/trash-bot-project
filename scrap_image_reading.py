@@ -12,10 +12,10 @@ if frame is not None:
         hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
         cv2.imshow("hsv", hsv)
 
-        blueFiltered = cv2.inRange(hsv, (100, 100, 0), (150, 255, 230))
+        blueFiltered = cv2.inRange(hsv, (100, 100, 70), (150, 255, 230))
         redFiltered = cv2.inRange(hsv, (150, 70, 115), (190, 210, 220))
-        # cv2.imshow("final", blueFiltered)
-        # cv2.imshow("final", redFiltered)
+        cv2.imshow("final", blueFiltered)
+        # cv2.imshow("final", redFilteredq)
 
         contrsBlue, hierBlue = cv2.findContours(blueFiltered, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         contrsRed, hierRed = cv2.findContours(redFiltered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

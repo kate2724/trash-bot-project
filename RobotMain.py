@@ -1,12 +1,18 @@
 from ev3dev2.motor import OUTPUT_A, OUTPUT_B, OUTPUT_C, OUTPUT_D
 from ev3dev2.sensor import INPUT_1, INPUT_2, INPUT_3, INPUT_4
+from ev3dev2.display import Display
+from ev3dev2.sensor import Sensor
+from ev3dev2.port import LegoPort
 from SturdyBotHW3Starter import SturdyBot
 import time
 
 class TrashBot:
     def __init__(self):
-        config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D, "color-sensor":INPUT_1,"gyro-sensor":INPUT_2}
+        config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D, "color-sensor":INPUT_1,
+                  "gyro-sensor":INPUT_2, "ultra-sensor":INPUT_3}
         self.mainBot = SturdyBot('mainBot', config)
+        self.pixy = Sensor(INPUT_1)
+        self.pixy.mode = 'SIG1'
         self.initialize()
         self.state, self.foundTrash, self.remainingTrash, self.sensorResult, self.halt = (None for i in range(5))
 
@@ -45,7 +51,34 @@ class TrashBot:
             s.releaseTrash()
 
     def searchForTrash(s):
+
         if s.sensorResult.foundTrash:
+            # come back to this
+            if("""trash within range"""):
+                s.state = "grabbing trash"
+                s.grabTrash()
+            else:
+                s.fineTunePosition()
+        else:
+            s.wander()
+
+    def wander(s):
+        if s.mainBot.readDistance()<30:
+            s.mainBot.turnLeft(10)
+            leftDistance = s.mainBot.readDistance()
+            s.mainBot.turnRight(10)
+            s.mainBot.turnRight(10)
+            rightDistance = s.mainBot.readDistance
+
+            if(leftDistance > rightDistance):
+                s.mainBot.turnLeft(10)
+                s.mainBot.turnLeft(10)
+        else:
+            s.mainBot.forward(10)
+
+    def transportTrash(s):
+        s.pixy.mode = 'SIG2'
+
 
 
 

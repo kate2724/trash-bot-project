@@ -147,7 +147,7 @@ class SturdyBot(object):
 
     def forward(self, speed, runTime=None):
         """Make the robot move forward with the given speed. If there is no given time,
-        the robot would move forerver"""
+        the robot would move forever"""
         assert -100.0 <= speed <= 100.0
         assert self.tankMover is not None
         if runTime is None:
