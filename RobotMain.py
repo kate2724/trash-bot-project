@@ -16,7 +16,7 @@ class TrashBot:
         self.pixy.mode = 'SIG1'
         self.initialize()
         self.state, self.foundTrash, self.remainingTrash, self.sensorResult, self.halt = (None for i in range(5))
-        # pixy cam ix 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
+        # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.GRABBER_CENTROID = (160, 170)
         self.GRABBER_DIMS = (100, 20) # TODO: these grabber constants are completely arbitrary
 
