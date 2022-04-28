@@ -16,11 +16,14 @@ class TrashBot:
         self.pixy = Sensor(INPUT_1)
         self.initialize()
         self.state, self.foundTrash, self.remainingTrash, self.sensorResult, self.halt = (None for i in range(5))
+        self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
-        self.GRABBER_CENTROID = (160, 170)
-        self.GRABBER_DIMS = (100, 20) # TODO: these grabber constants are completely arbitrary
-        self.grabber_hmap = linearMap(min_in=-160, max_in=160, min_out=-5, max_out=5)
-        self.grabber_vmap = linearMap(min_in=-30, max_in=30, min_out=-5, max_out=5, inverse=True)
+        cam_res_x, cam_res_y = 320, 200
+        g_x, g_y = 160, 170  # TODO: these grabber constants are completely arbitrary. The mapping values below are based on these as well
+        self.GRABBER_CENTROID = (g_x, g_y)
+        self.GRABBER_DIMS = (100, 20)
+        self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
+        self.grabber_vmap = linearMap(min_in=-(cam_res_y-g_y), max_in=cam_res_y-g_y, min_out=-5, max_out=5, inverse=True)
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
 
@@ -86,6 +89,8 @@ class TrashBot:
             s.searchForTrash()
         elif s.state == "grabbing trash":
             s.grabTrash()
+        elif s.state == "looking for dumpster":
+            s.searchForDumspter()
         elif s.state == "transporting trash":
             s.transportTrash()
         elif s.state == "releasing trash":
@@ -93,9 +98,6 @@ class TrashBot:
 
     def searchForTrash(s):
         if s.sensorResult.seesTrash:
-
-        if s.sensorResult.foundTrash:
-            # come back to this
             if s.sensorResult.withinGrabber:
                 s.state = "grabbing trash"
                 s.grabTrash()
@@ -118,22 +120,20 @@ class TrashBot:
         else:
             s.mainBot.forward(10)
 
+    def searchForDumspter(s):
+        currentAngle = s.mainBot.readGyroAngle()
+        if abs(s.originalAngle - currentAngle) > 359 or s.sensorResult.foundDumpster:
+            s.state = "transporting trash"
+        else:
+            s.mainBot.turnRight(4)
+
     def transportTrash(s):
-        flagFound= False
         floorReflectance = s.mainBot.readReflect()
-        reachedDumpster = floorReflectance>20
+        reachedDumpster = floorReflectance > 20
         if reachedDumpster:
             s.state = "releasing trash"
             s.releaseTrash()
         else:
-            originalAngle = s.mainBot.readGyroAngle()
-            currentAngle = s.mainBot.readGyroAngle()
-            while abs(originalAngle - currentAngle)<359 and flagFound==False:
-                s.mainBot.turnRight(4)
-                currentAngle = s.mainBot.readGyroAngle()
-                s.sense()
-                if(s.sensorResult.foundDumpster):
-                    flagFound = True
             if s.sensorResult.foundDumpster:
                 s.goToDumpster(s.sensorResult.dumpsterX)
             else:
@@ -163,8 +163,13 @@ class TrashBot:
         # should slow down as it approaches the correct position
         # should tend towards overshooting?
 
+        # fine-tuning is not its own state, to account for the possibility that the ball
+        #  gets knocked/jostled out of the robot's field of view during the approach.
+        #  this shouldn't happen often, but not using a state for this adds a little resilience
+
     def goToDumpster(s, dumpLocation):
         # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
+        pass
 
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
@@ -173,7 +178,8 @@ class TrashBot:
 
     def grabTrash(s):
         s.mainBot.pointerTurnBy(-100, speed=20)
-        s.state = "transporting trash"
+        s.state = "looking for dumpster"
+        s.originalAngle = s.mainBot.readGyroAngle()
         s.pixy.mode = s.PIXY_DUMPSTER_MODE
 
 def withinRect(centroid, dims, x, y):
@@ -216,31 +222,6 @@ class TrashObject:
     color: str
     x: int
     y: int
-
-    # def setup(time_limit):
-    #     startTime = time.time()
-    #     elapsedTime = 0.0
-    #
-    #     while elapsedTime < time_limit:
-    #         step()
-    #         elapsedTime = time.time() - startTime
-    #         light = mainBot.readReflect()
-    #         print("light", light)
-    #         if light >= 10:
-    #             print("Success! elapsed time:", elapsedTime)
-    #             mainBot.stop()
-    #             mainBot.snd.speak("found color")
-    #             break
-    #     if elapsedTime >= time_limit:
-    #         mainBot.stop()
-    #         print("Failure. ran out of time (limit", time_limit, "seconds")
-    #         mainBot.snd.speak("I failed :(")
-    #     mainBot.stop()
-    #
-    # def step():
-    #     mainBot.forward(10)
-    #
-    # setup(20)
 
 b = TrashBot()
 b.run(60)
