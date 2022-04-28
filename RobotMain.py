@@ -131,12 +131,12 @@ class TrashBot:
             while abs(originalAngle - currentAngle)<359 and flagFound==False:
                 s.mainBot.turnRight(4)
                 currentAngle = s.mainBot.readGyroAngle()
-                if("found flag"):
-                    # re
+                s.sense()
+                # dumpsterLocation = s.sensorResult.dumpsterX
+                if(s.sensorResult.foundDumpster):
                     flagFound = True
-
-            if flagFound:
-                s.goToDumpster()
+            if s.sensorResult.foundDumpster:
+                s.goToDumpster(s.sensorResult.dumpsterX)
             else:
                 s.wander()
 
@@ -164,7 +164,7 @@ class TrashBot:
         # should slow down as it approaches the correct position
         # should tend towards overshooting?
 
-    def goToDumpster(s):
+    def goToDumpster(s, dumpLocation):
         pass
 
     def releaseTrash(s):
@@ -176,8 +176,6 @@ class TrashBot:
         s.mainBot.pointerTurnBy(-100, speed=20)
         s.state = "transporting trash"
         s.pixy.mode = s.PIXY_DUMPSTER_MODE
-
-
 
 def withinRect(centroid, dims, x, y):
     if centroid[0] + dims[0] > x:
