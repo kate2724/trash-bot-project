@@ -5,6 +5,7 @@ from ev3dev2.sensor import Sensor
 from ev3dev2.port import LegoPort
 from SturdyBotHW3Starter import SturdyBot
 import time
+from dataclasses import dataclass
 
 class TrashBot:
     def __init__(self):
@@ -15,6 +16,9 @@ class TrashBot:
         self.pixy.mode = 'SIG1'
         self.initialize()
         self.state, self.foundTrash, self.remainingTrash, self.sensorResult, self.halt = (None for i in range(5))
+        # pixy cam ix 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
+        self.GRABBER_CENTROID = (160, 170)
+        self.GRABBER_DIMS = (100, 20) # TODO: these grabber constants are completely arbitrary
 
     def initialize(self):
         self.state = "looking for trash"
@@ -23,13 +27,38 @@ class TrashBot:
         self.sensorResult = None
         self.halt = False  # emergency stop
 
+    def sense(self):
+        trashList = []
+
+        # do thing. should fill with 'TrashObject' objects
+
+        seesTrash = len(trashList) > 0
+
+        # checks if any of the discovered trash objects are within the grabber's grasp
+        withinGrabber = None
+        if seesTrash:
+            for trash in trashList:
+                if withinRect(self.GRABBER_CENTROID, self.GRABBER_DIMS, trash.x, trash,y):
+                    withinGrabber = True
+        if withinGrabber is None:
+            withinGrabber = False
+
+
+        # read for dumpster
+
+        dumpsterX = -1
+
+
+        foundDumpster = dumpsterX >= 0
+
+        return SensorReading(seesTrash, withinGrabber, tuple(trashList), foundDumpster, dumpsterX)
 
     def run(s, time_limit):
         s.initialize()
         startTime = time.time()
         elapsedTime = 0.0
         while elapsedTime < time_limit and len(s.remainingTrash) > 0 and not s.halt:
-            s.sensorResult = SensorReading(s.mainBot)
+            s.sensorResult = s.sense()
             s.cleanUpStep()
             elapsedTime = time.time() - startTime
             if s.mainBot.bttn.backspace:
@@ -51,6 +80,7 @@ class TrashBot:
             s.releaseTrash()
 
     def searchForTrash(s):
+        if s.sensorResult.seesTrash:
 
         if s.sensorResult.foundTrash:
             # come back to this
@@ -81,23 +111,31 @@ class TrashBot:
 
 
 
+def withinRect(centroid, dims, x, y):
+    if centroid[0] + dims[0] > x:
+        return False
+    if centroid[0] - dims[0] < x:
+        return False
+    if centroid[1] + dims[1] > y:
+        return False
+    if centroid[1] + dims[1] < y:
+        return False
+    return True
+    # jesus this is the worst possible way to evaluate this
 
-
+@dataclass
 class SensorReading:
-    def __init__(self, robot):
-        # creates a new sensor reading from the robot's pixy cam.
-        self.trashList = self.readForTrash(robot)
-        self.foundTrash = len(self.trashList) > 0
-        self.dumpsterX = self.readForDumpster(robot)
-        self.foundDumpster = self.dumpsterX >= 0
+    seesTrash: bool
+    withinGrabber: bool
+    trashList: tuple
+    foundDumpster: bool
+    dumpsterX: int
 
-    def readForTrash(self, robot):
-        # do stuff with pixy cam
-        return ()
-
-    def readForDumpster(self, robot):
-        # do stuff with pixy cam
-        return -1
+@dataclass
+class TrashObject:
+    color: str
+    x: int
+    y: int
 
     # def setup(time_limit):
     #     startTime = time.time()
@@ -123,3 +161,6 @@ class SensorReading:
     #     mainBot.forward(10)
     #
     # setup(20)
+
+b = TrashBot()
+b.run(60)
