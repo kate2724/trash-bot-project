@@ -1,8 +1,15 @@
 from time import sleep
-#
+from ev3dev2.display import Display
 from ev3dev2.sensor import Sensor, INPUT_1
 from ev3dev2.port import LegoPort
+from ev3dev2.button import Button
 
+
+# EV3 Display
+lcd = Display()
+
+# Connect TouchSensor
+bttn = Button()
 
 # Set LEGO port for Pixy on input port 1
 in1 = LegoPort(INPUT_1)
