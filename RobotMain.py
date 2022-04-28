@@ -132,7 +132,6 @@ class TrashBot:
                 s.mainBot.turnRight(4)
                 currentAngle = s.mainBot.readGyroAngle()
                 s.sense()
-                # dumpsterLocation = s.sensorResult.dumpsterX
                 if(s.sensorResult.foundDumpster):
                     flagFound = True
             if s.sensorResult.foundDumpster:
@@ -165,7 +164,7 @@ class TrashBot:
         # should tend towards overshooting?
 
     def goToDumpster(s, dumpLocation):
-        pass
+        # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
 
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
