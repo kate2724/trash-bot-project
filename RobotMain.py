@@ -21,38 +21,47 @@ class TrashBot:
         self.GRABBER_DIMS = (100, 20) # TODO: these grabber constants are completely arbitrary
         self.grabber_hmap = linearMap(min_in=-160, max_in=160, min_out=-5, max_out=5)
         self.grabber_vmap = linearMap(min_in=-30, max_in=30, min_out=-5, max_out=5, inverse=True)
+        self.PIXY_TRASH_MODE = "SIG1"
+        self.PIXY_DUMPSTER_MODE = "SIG2"
 
     def initialize(self):
         self.state = "looking for trash"
-        self.pixy.mode = 'SIG1'
+        self.pixy.mode = self.PIXY_TRASH_MODE
         self.foundTrash = []
         self.remainingTrash = ['blue']
         self.sensorResult = None
         self.halt = False  # emergency stop
 
-    def sense(self):
+    def sense(s):
         trashList = []
-
-        # do thing. should fill with 'TrashObject' objects based on objects camera can see
-
+        if s.pixy.mode == s.PIXY_TRASH_MODE:
+            # should fill with 'TrashObject' objects based on objects camera can see.
+            # as we currently understand it, the lego API only allows the pixycam to report one
+            # detected object at a time, so in practice, this list is always either empty or len 1
+            x = s.pixy.value(1)
+            y = s.pixy.value(2)
+            color = "blue"  # ideally, the pixycam would find trash objects of multiple colors,
+                            # recognize their colors by their signature, and report the color here.
+                            # in practice, we're only detecting blue objects.
+            if x > 0 or y > 0:
+                # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
+                # TODO: check this assumption
+                trashList.append(TrashObject(color, x, y))
         seesTrash = len(trashList) > 0
 
         # checks if any of the discovered trash objects are within the grabber's grasp
         withinGrabber = None
         if seesTrash:
             for trash in trashList:
-                if withinRect(self.GRABBER_CENTROID, self.GRABBER_DIMS, trash.x, trash,y):
+                if withinRect(s.GRABBER_CENTROID, s.GRABBER_DIMS, trash.x, trash.y):
                     withinGrabber = True
         if withinGrabber is None:
             withinGrabber = False
 
-
-        # read for dumpster
-
         dumpsterX = -1
-
-
-        foundDumpster = dumpsterX >= 0
+        if s.pixy.mode == s.PIXY_DUMPSTER_MODE:
+            dumpsterX = s.pixy.value(1)
+        foundDumpster = dumpsterX > 0
 
         return SensorReading(seesTrash, withinGrabber, tuple(trashList), foundDumpster, dumpsterX)
 
@@ -161,12 +170,12 @@ class TrashBot:
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
         s.state = "looking for trash"
-        s.pixy.mode = "SIG1"
+        s.pixy.mode = s.PIXY_TRASH_MODE
 
     def grabTrash(s):
         s.mainBot.pointerTurnBy(-100, speed=20)
         s.state = "transporting trash"
-        s.pixy.mode = 'SIG2'
+        s.pixy.mode = s.PIXY_DUMPSTER_MODE
 
 
 
