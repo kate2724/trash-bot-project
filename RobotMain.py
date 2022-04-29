@@ -22,7 +22,7 @@ class TrashBot:
         self.GRABBER_CENTROID = (g_x, g_y)
         self.GRABBER_DIMS = (100, 20)
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
-        self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.cam_res_y - g_y, min_out=-5, max_out=5, inverse=True)
+        self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=2.5, inverse=True)
         self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-2, max_out=2)
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
@@ -37,6 +37,7 @@ class TrashBot:
         elapsedTime = 0.0
         while elapsedTime < time_limit and not s.halt:
             s.sensorResult = s.sense()
+            print(str(s.sensorResult.seesTrash))
             s.cleanUpStep()
             elapsedTime = time.time() - startTime
             if s.mainBot.bttn.backspace:
@@ -113,6 +114,7 @@ class TrashBot:
             s.wander()
 
     def grabTrash(s):
+        s.mainBot.forward(0)  # equivalent to stopping
         s.mainBot.pointerTurnBy(-100, speed=20)
         s.state = State.SEARCHING_FOR_DUMPSTER
         s.originalAngle = s.mainBot.readGyroAngle()
@@ -147,16 +149,16 @@ class TrashBot:
     ##########################
 
     def wander(s):
-        if s.mainBot.readDistance() < 30:
-            s.mainBot.turnLeft(10)
+        d = s.mainBot.readDistance()
+        print("distance:", d)
+        if d < 60:
+            s.mainBot.turnLeft(10, runTime=1)
             leftDistance = s.mainBot.readDistance()
-            s.mainBot.turnRight(10)
-            s.mainBot.turnRight(10)
+            s.mainBot.turnRight(10, runTime=2)
             rightDistance = s.mainBot.readDistance()
 
             if leftDistance > rightDistance:
-                s.mainBot.turnLeft(10)
-                s.mainBot.turnLeft(10)
+                s.mainBot.turnLeft(10, runTime=2)
         else:
             s.mainBot.forward(10)
 
@@ -169,7 +171,7 @@ class TrashBot:
         horizontal_diff = (trash.x - grabber_x)  # this is negative when the bot needs to turn left
         vertical_diff = (trash.y - grabber_y)  # this is negative when the bot needs to drive forward
         horizontal_impulse = s.grabber_hmap(horizontal_diff)  # maps negatives to negatives
-        vertical_impulse = s.grabber_vmap(vertical_diff) + 1  # maps negatives to positives
+        vertical_impulse = s.grabber_vmap(vertical_diff) + 2.5  # maps negatives to positives
 
         # if the left motor < power than right motor, then bot turns left.
         # so, if horizontal_impulse is negative, these equations give left_speed < right_speed
