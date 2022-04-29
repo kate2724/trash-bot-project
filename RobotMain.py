@@ -29,6 +29,23 @@ class TrashBot:
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
 
+    ##########################
+    ##### DRIVER METHODS #####
+    ##########################
+
+    def run(s, time_limit):
+        s.initialize()
+        startTime = time.time()
+        elapsedTime = 0.0
+        while elapsedTime < time_limit and not s.halt:
+            s.sensorResult = s.sense()
+            s.cleanUpStep()
+            elapsedTime = time.time() - startTime
+            if s.mainBot.bttn.backspace:
+                s.halt = True
+        print("trash objects found:", len(s.foundTrash))
+        s.mainBot.stop()
+
     def initialize(self):
         self.state = State.SEARCHING_FOR_TRASH
         self.pixy.mode = self.PIXY_TRASH_MODE
@@ -50,6 +67,7 @@ class TrashBot:
             if x > 0 or y > 0:
                 # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
                 # TODO: check this assumption
+                # TODO: add heuristic to refuse to add trash objects whose on-screen area is too small
                 trashList.append(TrashObject(color, x, y))
         seesTrash = len(trashList) > 0
 
@@ -62,25 +80,13 @@ class TrashBot:
         if withinGrabber is None:
             withinGrabber = False
 
+        # searches for the dumpster
         dumpsterX = -1
         if s.pixy.mode == s.PIXY_DUMPSTER_MODE:
             dumpsterX = s.pixy.value(1)
         foundDumpster = dumpsterX > 0
 
         return SensorReading(seesTrash, withinGrabber, tuple(trashList), foundDumpster, dumpsterX)
-
-    def run(s, time_limit):
-        s.initialize()
-        startTime = time.time()
-        elapsedTime = 0.0
-        while elapsedTime < time_limit and not s.halt:
-            s.sensorResult = s.sense()
-            s.cleanUpStep()
-            elapsedTime = time.time() - startTime
-            if s.mainBot.bttn.backspace:
-                s.halt = True
-        print("trash objects found:", len(s.foundTrash))
-        s.mainBot.stop()
 
     def cleanUpStep(s):
         if s.state is State.SEARCHING_FOR_TRASH:
@@ -94,6 +100,10 @@ class TrashBot:
         elif s.state is State.RELEASING_TRASH:
             s.releaseTrash()
 
+    #########################
+    ##### STATE METHODS #####
+    #########################
+
     def searchForTrash(s):
         if s.sensorResult.seesTrash:
             if s.sensorResult.withinGrabber:
@@ -104,19 +114,11 @@ class TrashBot:
         else:
             s.wander()
 
-    def wander(s):
-        if s.mainBot.readDistance() < 30:
-            s.mainBot.turnLeft(10)
-            leftDistance = s.mainBot.readDistance()
-            s.mainBot.turnRight(10)
-            s.mainBot.turnRight(10)
-            rightDistance = s.mainBot.readDistance()
-
-            if leftDistance > rightDistance:
-                s.mainBot.turnLeft(10)
-                s.mainBot.turnLeft(10)
-        else:
-            s.mainBot.forward(10)
+    def grabTrash(s):
+        s.mainBot.pointerTurnBy(-100, speed=20)
+        s.state = State.SEARCHING_FOR_DUMPSTER
+        s.originalAngle = s.mainBot.readGyroAngle()
+        s.pixy.mode = s.PIXY_DUMPSTER_MODE
 
     def searchForDumspter(s):
         currentAngle = s.mainBot.readGyroAngle()
@@ -137,15 +139,28 @@ class TrashBot:
             else:
                 s.wander()
 
-    def goToDumpster(s):
-        # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
-        horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
-        horizontal_impulse = s.dumpster_hmap(horizontal_diff)
-        forward_impulse = 10  # should always drive forward while returning to the dumpster
+    def releaseTrash(s):
+        s.mainBot.pointerTurnBy(100, speed=20)
+        s.state = State.SEARCHING_FOR_TRASH
+        s.pixy.mode = s.PIXY_TRASH_MODE
 
-        left_speed = forward_impulse + horizontal_impulse
-        right_speed = forward_impulse - horizontal_impulse
-        s.mainBot.curve(left_speed, right_speed)
+    ##########################
+    ##### HELPER METHODS #####
+    ##########################
+
+    def wander(s):
+        if s.mainBot.readDistance() < 30:
+            s.mainBot.turnLeft(10)
+            leftDistance = s.mainBot.readDistance()
+            s.mainBot.turnRight(10)
+            s.mainBot.turnRight(10)
+            rightDistance = s.mainBot.readDistance()
+
+            if leftDistance > rightDistance:
+                s.mainBot.turnLeft(10)
+                s.mainBot.turnLeft(10)
+        else:
+            s.mainBot.forward(10)
 
     def fineTunePosition(s):
         # this method will only be called when the trash isn't already within the grabber's claw
@@ -175,16 +190,51 @@ class TrashBot:
         #  gets knocked/jostled out of the robot's field of view during the approach.
         #  this shouldn't happen often, but not using a state for this adds a little resilience
 
-    def releaseTrash(s):
-        s.mainBot.pointerTurnBy(100, speed=20)
-        s.state = State.SEARCHING_FOR_TRASH
-        s.pixy.mode = s.PIXY_TRASH_MODE
+    def goToDumpster(s):
+        # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
+        horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
+        horizontal_impulse = s.dumpster_hmap(horizontal_diff)
+        forward_impulse = 10  # should always drive forward while returning to the dumpster
 
-    def grabTrash(s):
-        s.mainBot.pointerTurnBy(-100, speed=20)
-        s.state = State.SEARCHING_FOR_DUMPSTER
-        s.originalAngle = s.mainBot.readGyroAngle()
-        s.pixy.mode = s.PIXY_DUMPSTER_MODE
+        left_speed = forward_impulse + horizontal_impulse
+        right_speed = forward_impulse - horizontal_impulse
+        s.mainBot.curve(left_speed, right_speed)
+
+### End class
+
+##########################
+##### HELPER CLASSES #####
+##########################
+
+
+@unique
+class State(Enum):
+    SEARCHING_FOR_TRASH = "searching for trash"
+    GRABBING_TRASH = "grabbing trash"
+    SEARCHING_FOR_DUMPSTER = "searching for dumpster"
+    TRANSPORTING_TRASH = "transporting trash"
+    RELEASING_TRASH = "releasing trash"
+
+
+@dataclass
+class SensorReading:
+    seesTrash: bool
+    withinGrabber: bool
+    trashList: tuple
+    foundDumpster: bool
+    dumpsterX: int
+
+
+@dataclass
+class TrashObject:
+    color: str
+    x: int
+    y: int
+
+############################
+##### HELPER FUNCTIONS #####
+############################
+
 
 def withinRect(centroid, dims, x, y):
     if centroid[0] + dims[0] > x:
@@ -198,8 +248,9 @@ def withinRect(centroid, dims, x, y):
     return True
     # jesus this is the worst possible way to evaluate this
 
+
 def linearMap(min_in, max_in, min_out, max_out, inverse=False):
-    def map(x):
+    def lin_map(x):
         if x <= min_in:
             input_distance = 0
         elif x >= max_in:
@@ -211,29 +262,11 @@ def linearMap(min_in, max_in, min_out, max_out, inverse=False):
             return max_out - input_distance * output_range
         else:
             return min_out + input_distance * output_range
-    return map
+    return lin_map
 
-@unique
-class State(Enum):
-    SEARCHING_FOR_TRASH = "searching for trash"
-    GRABBING_TRASH = "grabbing trash"
-    SEARCHING_FOR_DUMPSTER = "searching for dumpster"
-    TRANSPORTING_TRASH = "transporting trash"
-    RELEASING_TRASH = "releasing trash"
-
-@dataclass
-class SensorReading:
-    seesTrash: bool
-    withinGrabber: bool
-    trashList: tuple
-    foundDumpster: bool
-    dumpsterX: int
-
-@dataclass
-class TrashObject:
-    color: str
-    x: int
-    y: int
+##########################
+##### EXECUTING CODE #####
+##########################
 
 b = TrashBot()
 b.run(60)
