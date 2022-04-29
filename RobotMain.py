@@ -133,7 +133,7 @@ class TrashBot:
             s.releaseTrash()
         else:
             if s.sensorResult.foundDumpster:
-                s.goToDumpster(s.sensorResult.dumpsterX)
+                s.goToDumpster()
             else:
                 s.wander()
 
