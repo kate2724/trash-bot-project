@@ -63,7 +63,7 @@ class TrashBot:
             color = "blue"  # ideally, the pixycam would find trash objects of multiple colors,
                             # recognize their colors by their signature, and report the color here.
                             # in practice, we're only detecting blue objects.
-            if x > 0 or y > 0:
+            if x > 0 or y > 0 and not color in s.foundTrash:
                 # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
                 # TODO: check this assumption
                 # TODO: add heuristic to refuse to add trash objects whose on-screen area is too small
@@ -141,6 +141,7 @@ class TrashBot:
 
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
+        s.foundTrash.append("blue")  # ideally this would be determined dynamically
         s.state = State.SEARCHING_FOR_TRASH
         s.pixy.mode = s.PIXY_TRASH_MODE
 
