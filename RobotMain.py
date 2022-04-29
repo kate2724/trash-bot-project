@@ -137,6 +137,16 @@ class TrashBot:
             else:
                 s.wander()
 
+    def goToDumpster(s):
+        # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
+        horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
+        horizontal_impulse = s.dumpster_hmap(horizontal_diff)
+        forward_impulse = 10  # should always drive forward while returning to the dumpster
+
+        left_speed = forward_impulse + horizontal_impulse
+        right_speed = forward_impulse - horizontal_impulse
+        s.mainBot.curve(left_speed, right_speed)
+
     def fineTunePosition(s):
         # this method will only be called when the trash isn't already within the grabber's claw
         # it should also only be called when there is definitely a trash object (trashList not empty)
@@ -149,7 +159,7 @@ class TrashBot:
         vertical_impulse = s.grabber_vmap(vertical_diff) + 1  # maps negatives to positives
 
         # if the left motor < power than right motor, then bot turns left.
-        # so, if horizontal_impulse is negative, these eqns give left_speed < right_speed
+        # so, if horizontal_impulse is negative, these equations give left_speed < right_speed
         left_speed = vertical_impulse + horizontal_impulse
         right_speed = vertical_impulse - horizontal_impulse
 
@@ -164,16 +174,6 @@ class TrashBot:
         # fine-tuning is not its own state, to account for the possibility that the ball
         #  gets knocked/jostled out of the robot's field of view during the approach.
         #  this shouldn't happen often, but not using a state for this adds a little resilience
-
-    def goToDumpster(s):
-        # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
-        horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
-        horizontal_impulse = s.dumpster_hmap(horizontal_diff)
-        forward_impulse = 10  # should always drive forward while returning to the dumpster
-
-        left_speed = forward_impulse + horizontal_impulse
-        right_speed = forward_impulse - horizontal_impulse
-        s.mainBot.curve(left_speed, right_speed)
 
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
