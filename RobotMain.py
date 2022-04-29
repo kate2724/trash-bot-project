@@ -14,7 +14,6 @@ class TrashBot:
                   "gyro-sensor":INPUT_3, "ultra-sensor":INPUT_4}
         self.mainBot = SturdyBot('mainBot', config)
         self.pixy = Sensor(INPUT_2)
-        self.initialize()
         self.state, self.foundTrash, self.sensorResult, self.halt = (None for i in range(4))
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
