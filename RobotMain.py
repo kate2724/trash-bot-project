@@ -16,15 +16,16 @@ class TrashBot:
         self.mainBot = SturdyBot('mainBot', config)
         self.pixy = Sensor(INPUT_1)
         self.initialize()
-        self.state, self.foundTrash, self.remainingTrash, self.sensorResult, self.halt = (None for i in range(5))
+        self.state, self.foundTrash, self.sensorResult, self.halt = (None for i in range(4))
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
-        cam_res_x, cam_res_y = 320, 200
-        g_x, g_y = 160, 170  # TODO: these grabber constants are completely arbitrary. The mapping values below are based on these as well
+        self.CAM_RES_X, self.CAM_RES_Y = 320, 200
+        g_x, g_y = self.CAM_RES_X/2, 170  # TODO: these grabber constants are completely arbitrary. The mapping values below are based on these as well
         self.GRABBER_CENTROID = (g_x, g_y)
         self.GRABBER_DIMS = (100, 20)
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
-        self.grabber_vmap = linearMap(min_in=-(cam_res_y-g_y), max_in=cam_res_y-g_y, min_out=-5, max_out=5, inverse=True)
+        self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.cam_res_y - g_y, min_out=-5, max_out=5, inverse=True)
+        self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-2, max_out=2)
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
 
@@ -32,7 +33,6 @@ class TrashBot:
         self.state = State.SEARCHING_FOR_TRASH
         self.pixy.mode = self.PIXY_TRASH_MODE
         self.foundTrash = []
-        self.remainingTrash = ['blue']
         self.sensorResult = None
         self.halt = False  # emergency stop
 
@@ -73,16 +73,13 @@ class TrashBot:
         s.initialize()
         startTime = time.time()
         elapsedTime = 0.0
-        while elapsedTime < time_limit and len(s.remainingTrash) > 0 and not s.halt:
+        while elapsedTime < time_limit and not s.halt:
             s.sensorResult = s.sense()
             s.cleanUpStep()
             elapsedTime = time.time() - startTime
             if s.mainBot.bttn.backspace:
                 s.halt = True
-        if len(s.remainingTrash) == 0:
-            print("success")
-        else:
-            print("timeout")
+        print("trash objects found:", len(s.foundTrash))
         s.mainBot.stop()
 
     def cleanUpStep(s):
@@ -168,10 +165,15 @@ class TrashBot:
         #  gets knocked/jostled out of the robot's field of view during the approach.
         #  this shouldn't happen often, but not using a state for this adds a little resilience
 
-    def goToDumpster(s, dumpLocation):
+    def goToDumpster(s):
         # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
+        horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
+        horizontal_impulse = s.dumpster_hmap(horizontal_diff)
+        forward_impulse = 10  # should always drive forward while returning to the dumpster
 
-        pass
+        left_speed = forward_impulse + horizontal_impulse
+        right_speed = forward_impulse - horizontal_impulse
+        s.mainBot.curve(left_speed, right_speed)
 
     def releaseTrash(s):
         s.mainBot.pointerTurnBy(100, speed=20)
