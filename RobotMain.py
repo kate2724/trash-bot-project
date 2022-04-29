@@ -6,7 +6,6 @@ from ev3dev2.port import LegoPort
 from SturdyBotHW3Starter import SturdyBot
 import time
 
-from dataclasses import dataclass
 from enum import Enum, unique
 
 class TrashBot:
@@ -216,20 +215,20 @@ class State(Enum):
     RELEASING_TRASH = "releasing trash"
 
 
-@dataclass
 class SensorReading:
-    seesTrash: bool
-    withinGrabber: bool
-    trashList: tuple
-    foundDumpster: bool
-    dumpsterX: int
+    def __init__(self, seesTrash, withinGrabber, trashList, foundDumpster, dumpsterX):
+        self.seesTrash = seesTrash
+        self.withinGrabber = withinGrabber
+        self.trashList = trashList
+        self.foundDumpster = foundDumpster
+        self.dumpsterX = dumpsterX
 
 
-@dataclass
 class TrashObject:
-    color: str
-    x: int
-    y: int
+    def __init__(self, color, x, y):
+        self.color = color
+        self.x = x
+        self.y = y
 
 ############################
 ##### HELPER FUNCTIONS #####
