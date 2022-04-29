@@ -12,9 +12,9 @@ from enum import Enum, unique
 class TrashBot:
     def __init__(self):
         config = {'left-motor':OUTPUT_C, 'right-motor': OUTPUT_B, "medium-motor":OUTPUT_D, "color-sensor":INPUT_1,
-                  "gyro-sensor":INPUT_2, "ultra-sensor":INPUT_3}
+                  "gyro-sensor":INPUT_3, "ultra-sensor":INPUT_4}
         self.mainBot = SturdyBot('mainBot', config)
-        self.pixy = Sensor(INPUT_1)
+        self.pixy = Sensor(INPUT_2)
         self.initialize()
         self.state, self.foundTrash, self.sensorResult, self.halt = (None for i in range(4))
         self.originalAngle = None
