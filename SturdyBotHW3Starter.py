@@ -147,7 +147,7 @@ class SturdyBot(object):
 
     def forward(self, speed, runTime=None):
         """Make the robot move forward with the given speed. If there is no given time,
-        the robot would move forever"""
+        the robot would move forerver"""
         assert -100.0 <= speed <= 100.0
         assert self.tankMover is not None
         if runTime is None:
@@ -202,7 +202,8 @@ class SturdyBot(object):
 
     def zeroPointer(self):
         """Turns the medium motor/pointer to the zero angle position. """
-        self.mediumMotor.on_to_position(30, 0)
+        if not self.mediumMotor.position == 0:
+		self.mediumMotor.on_to_position(30, 0)
 
     def pointerTurn(self, speed=50.0, runTime=None):
         """Turns the medium moter counter-clockwise at the given speed, stopping

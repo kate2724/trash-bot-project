@@ -22,7 +22,7 @@ class TrashBot:
         g_y = 200
         # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
-        self.GRABBER_DIMS = (165, 10)  # found through experiment
+        self.GRABBER_DIMS = (165, 15)  # found through experiment
         # self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
