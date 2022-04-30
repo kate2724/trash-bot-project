@@ -31,6 +31,7 @@ class TrashBot:
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
         self.GRABBING_DEGREES = -400
+        self.AREA_THRESHOLD = 30  # this is the area on screen which a reported object must occupied to be considered "real"
 
     ##########################
     ##### DRIVER METHODS #####
@@ -66,10 +67,13 @@ class TrashBot:
             # detected object at a time, so in practice, this list is always either empty or len 1
             x = s.pixy.value(1)
             y = s.pixy.value(2)
+            width = s.pixy.value(3)
+            height = s.pixy.value(4)
             color = "blue"  # ideally, the pixycam would find trash objects of multiple colors,
                             # recognize their colors by their signature, and report the color here.
                             # in practice, we're only detecting blue objects.
-            if x > 0 or y > 0 and color not in s.foundTrash:
+            area_on_screen = width * height
+            if color not in s.foundTrash and area_on_screen >= s.AREA_THRESHOLD:
                 # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
                 # TODO: check this assumption
                 # TODO: add heuristic to refuse to add trash objects whose on-screen area is too small
@@ -88,7 +92,12 @@ class TrashBot:
         # searches for the dumpster
         dumpsterX = -1
         if s.pixy.mode == s.PIXY_DUMPSTER_MODE:
-            dumpsterX = s.pixy.value(1)
+            x = s.pixy.value(1)
+            width = s.pixy.value(3)
+            height = s.pixy.value(4)
+            area_on_screen = width * height
+            if area_on_screen > s.AREA_THRESHOLD:
+                dumpsterX = x
         foundDumpster = dumpsterX > 0
 
         return SensorReading(seesTrash, withinGrabber, tuple(trashList), foundDumpster, dumpsterX)
@@ -152,7 +161,8 @@ class TrashBot:
         print(" *** *** Releasing Trash")
         s.mainBot.forward(0)
         s.mainBot.pointerTurnBy(-s.GRABBING_DEGREES, speed=20)
-        s.foundTrash.append("blue")  # ideally this would be determined dynamically
+        # s.foundTrash.append("blue")  # ideally this would be determined dynamically
+        s.foundTrash.append("placeholder")
         s.mainBot.backward(10, runTime=2)
         s.state = State.EXITING_DUMPSTER
         s.originalAngle = s.mainBot.readGyroAngle()
