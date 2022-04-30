@@ -18,9 +18,12 @@ class TrashBot:
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.CAM_RES_X, self.CAM_RES_Y = 320, 200
-        g_x, g_y = self.CAM_RES_X/2, 150  # TODO: these grabber constants are completely arbitrary. The mapping values below are based on these as well
+        g_x = self.CAM_RES_X/2
+        g_y = 200
+        # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
-        self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
+        self.GRABBER_DIMS = (165, 10)  # found through experiment
+        # self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
         self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=2.5, inverse=True)
@@ -39,7 +42,7 @@ class TrashBot:
         elapsedTime = 0.0
         while elapsedTime < time_limit and not s.halt:
             s.sensorResult = s.sense()
-            print("sees trash:", str(s.sensorResult.seesTrash), "found dumpster:", str(s.sensorResult.foundDumpster) "state:", str(s.state))
+            print("sees trash:", str(s.sensorResult.seesTrash), "found dumpster:", str(s.sensorResult.foundDumpster), "state:", str(s.state))
             s.cleanUpStep()
             elapsedTime = time.time() - startTime
             if s.mainBot.bttn.backspace:
@@ -101,6 +104,8 @@ class TrashBot:
             s.transportTrash()
         elif s.state is State.RELEASING_TRASH:
             s.releaseTrash()
+        elif s.state is State.EXITING_DUMPSTER:
+            s.exitDumpster()
 
     #########################
     ##### STATE METHODS #####
@@ -145,10 +150,20 @@ class TrashBot:
 
     def releaseTrash(s):
         print(" *** *** Releasing Trash")
+        s.mainBot.forward(0)
         s.mainBot.pointerTurnBy(-s.GRABBING_DEGREES, speed=20)
         s.foundTrash.append("blue")  # ideally this would be determined dynamically
-        s.state = State.SEARCHING_FOR_TRASH
-        s.pixy.mode = s.PIXY_TRASH_MODE
+        s.mainBot.backward(10, runTime=2)
+        s.state = State.EXITING_DUMPSTER
+        s.originalAngle = s.mainBot.readGyroAngle()
+
+    def exitDumpster(s):
+        currentAngle = s.mainBot.readGyroAngle()
+        if abs(s.originalAngle - currentAngle) >= 180:
+            s.state = State.SEARCHING_FOR_TRASH
+            s.pixy.mode = s.PIXY_TRASH_MODE
+        else:
+            s.mainBot.turnRight(4)
 
     ##########################
     ##### HELPER METHODS #####
@@ -157,7 +172,7 @@ class TrashBot:
     def wander(s):
         d = s.mainBot.readDistance()
         print("wandering", "distance:", d)
-        if d < 1:
+        if d < 50:
             s.mainBot.turnLeft(10, runTime=1)
             leftDistance = s.mainBot.readDistance()
             s.mainBot.turnRight(10, runTime=2)
@@ -220,6 +235,7 @@ class State(Enum):
     SEARCHING_FOR_DUMPSTER = "searching for dumpster"
     TRANSPORTING_TRASH = "transporting trash"
     RELEASING_TRASH = "releasing trash"
+    EXITING_DUMPSTER = "exiting dumpster"
 
 
 class SensorReading:
