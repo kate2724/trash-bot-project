@@ -203,7 +203,7 @@ class SturdyBot(object):
     def zeroPointer(self):
         """Turns the medium motor/pointer to the zero angle position. """
         if not self.mediumMotor.position == 0:
-		self.mediumMotor.on_to_position(30, 0)
+            self.mediumMotor.on_to_position(30, 0)
 
     def pointerTurn(self, speed=50.0, runTime=None):
         """Turns the medium moter counter-clockwise at the given speed, stopping
