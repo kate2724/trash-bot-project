@@ -27,6 +27,7 @@ class TrashBot:
         self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-2, max_out=2)
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
+        self.GRABBING_DEGREES = -400
 
     ##########################
     ##### DRIVER METHODS #####
@@ -52,6 +53,7 @@ class TrashBot:
         self.foundTrash = []
         self.sensorResult = None
         self.halt = False  # emergency stop
+        self.mainBot.zeroPointer()
 
     def sense(s):
         trashList = []
@@ -117,7 +119,7 @@ class TrashBot:
     def grabTrash(s):
         print(" *** Grabbing trash")
         s.mainBot.forward(0)  # equivalent to stopping
-        s.mainBot.pointerTurnBy(-100, speed=20)
+        s.mainBot.pointerTurnBy(s.GRABBING_DEGREES, speed=20)
         s.state = State.SEARCHING_FOR_DUMPSTER
         s.originalAngle = s.mainBot.readGyroAngle()
         s.pixy.mode = s.PIXY_DUMPSTER_MODE
@@ -143,7 +145,7 @@ class TrashBot:
 
     def releaseTrash(s):
         print(" *** *** Releasing Trash")
-        s.mainBot.pointerTurnBy(100, speed=20)
+        s.mainBot.pointerTurnBy(-s.GRABBING_DEGREES, speed=20)
         s.foundTrash.append("blue")  # ideally this would be determined dynamically
         s.state = State.SEARCHING_FOR_TRASH
         s.pixy.mode = s.PIXY_TRASH_MODE
