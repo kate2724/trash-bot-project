@@ -18,9 +18,10 @@ class TrashBot:
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.CAM_RES_X, self.CAM_RES_Y = 320, 200
-        g_x, g_y = self.CAM_RES_X/2, 170  # TODO: these grabber constants are completely arbitrary. The mapping values below are based on these as well
+        g_x, g_y = self.CAM_RES_X/2, 150  # TODO: these grabber constants are completely arbitrary. The mapping values below are based on these as well
         self.GRABBER_CENTROID = (g_x, g_y)
-        self.GRABBER_DIMS = (100, 20)
+        self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
+        # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
         self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=2.5, inverse=True)
         self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-2, max_out=2)
@@ -37,7 +38,7 @@ class TrashBot:
         elapsedTime = 0.0
         while elapsedTime < time_limit and not s.halt:
             s.sensorResult = s.sense()
-            print(str(s.sensorResult.seesTrash))
+            print("sees trash:", str(s.sensorResult.seesTrash), "found dumpster:", str(s.sensorResult.foundDumpster) "state:", str(s.state))
             s.cleanUpStep()
             elapsedTime = time.time() - startTime
             if s.mainBot.bttn.backspace:
@@ -63,7 +64,7 @@ class TrashBot:
             color = "blue"  # ideally, the pixycam would find trash objects of multiple colors,
                             # recognize their colors by their signature, and report the color here.
                             # in practice, we're only detecting blue objects.
-            if x > 0 or y > 0 and not color in s.foundTrash:
+            if x > 0 or y > 0 and color not in s.foundTrash:
                 # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
                 # TODO: check this assumption
                 # TODO: add heuristic to refuse to add trash objects whose on-screen area is too small
@@ -114,6 +115,7 @@ class TrashBot:
             s.wander()
 
     def grabTrash(s):
+        print(" *** Grabbing trash")
         s.mainBot.forward(0)  # equivalent to stopping
         s.mainBot.pointerTurnBy(-100, speed=20)
         s.state = State.SEARCHING_FOR_DUMPSTER
@@ -140,6 +142,7 @@ class TrashBot:
                 s.wander()
 
     def releaseTrash(s):
+        print(" *** *** Releasing Trash")
         s.mainBot.pointerTurnBy(100, speed=20)
         s.foundTrash.append("blue")  # ideally this would be determined dynamically
         s.state = State.SEARCHING_FOR_TRASH
@@ -151,8 +154,8 @@ class TrashBot:
 
     def wander(s):
         d = s.mainBot.readDistance()
-        print("distance:", d)
-        if d < 60:
+        print("wandering", "distance:", d)
+        if d < 1:
             s.mainBot.turnLeft(10, runTime=1)
             leftDistance = s.mainBot.readDistance()
             s.mainBot.turnRight(10, runTime=2)
@@ -192,7 +195,7 @@ class TrashBot:
         #  this shouldn't happen often, but not using a state for this adds a little resilience
 
     def goToDumpster(s):
-        # TODO center dumpster location in camera, move forwards until reach dumpster, recentering as necessary
+        print("going to dumpster")
         horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
         horizontal_impulse = s.dumpster_hmap(horizontal_diff)
         forward_impulse = 10  # should always drive forward while returning to the dumpster
@@ -238,16 +241,9 @@ class TrashObject:
 
 
 def withinRect(centroid, dims, x, y):
-    if centroid[0] + dims[0] > x:
-        return False
-    if centroid[0] - dims[0] < x:
-        return False
-    if centroid[1] + dims[1] > y:
-        return False
-    if centroid[1] + dims[1] < y:
-        return False
-    return True
-    # jesus this is the worst possible way to evaluate this
+    cent_x, cent_y = centroid
+    width, height = (d / 2 for d in dims)  # width and height of box, from centroid
+    return cent_x - width < x < cent_x + width and cent_y - height < y < cent_y + height
 
 
 def linearMap(min_in, max_in, min_out, max_out, inverse=False):
@@ -270,4 +266,4 @@ def linearMap(min_in, max_in, min_out, max_out, inverse=False):
 ##########################
 
 b = TrashBot()
-b.run(60)
+b.run(180)
