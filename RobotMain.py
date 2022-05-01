@@ -14,7 +14,7 @@ class TrashBot:
                   "gyro-sensor":INPUT_3, "ultra-sensor":INPUT_4}
         self.mainBot = SturdyBot('mainBot', config)
         self.pixy = Sensor(INPUT_2)
-        self.state, self.foundTrash, self.sensorResult, self.halt = (None for i in range(4))
+        self.state, self.foundTrash, self.sensorResult, self.halt = (None for _ in range(4))
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.CAM_RES_X, self.CAM_RES_Y = 320, 200
@@ -26,12 +26,12 @@ class TrashBot:
         # self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
-        self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=2.5, inverse=True)
+        self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=5, inverse=True)
         self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-2, max_out=2)
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
         self.GRABBING_DEGREES = -400
-        self.AREA_THRESHOLD = 30  # this is the area on screen which a reported object must occupied to be considered "real"
+        self.AREA_THRESHOLD = 50  # this is the area on screen which a reported object must occupy to be detected. Helps to filter out noise
 
     ##########################
     ##### DRIVER METHODS #####
@@ -75,7 +75,7 @@ class TrashBot:
                             # recognize their colors by their signature, and report the color here.
                             # in practice, we're only detecting blue objects.
             area_on_screen = width * height
-            print("trash", color, x, y, area_on_screen)
+            print("   *s*  trash", color, x, y, area_on_screen)
             if color not in s.foundTrash and area_on_screen >= s.AREA_THRESHOLD:
                 trashList.append(TrashObject(color, x, y))
         seesTrash = len(trashList) > 0
@@ -96,7 +96,7 @@ class TrashBot:
             width = s.pixy.value(3)
             height = s.pixy.value(4)
             area_on_screen = width * height
-            print("dumpster", x, area_on_screen)
+            print("   *s*  dumpster", x, area_on_screen)
             if area_on_screen > s.AREA_THRESHOLD:
                 dumpsterX = x
         foundDumpster = dumpsterX > 0
@@ -132,7 +132,7 @@ class TrashBot:
             s.wander()
 
     def grabTrash(s):
-        print(" *** Grabbing trash")
+        print("   *a*  Grabbing trash")
         s.mainBot.forward(10, runTime=1.5)  # ensures that the ball is definitely in grabber's well
         s.mainBot.forward(0)  # equivalent to stopping
         s.mainBot.pointerTurnBy(s.GRABBING_DEGREES, speed=20)
@@ -160,7 +160,7 @@ class TrashBot:
                 s.wander()
 
     def releaseTrash(s):
-        print(" *** *** Releasing Trash")
+        print("   *a*  Releasing Trash")
         s.mainBot.forward(0)
         s.mainBot.pointerTurnBy(-s.GRABBING_DEGREES, speed=20)
         # s.foundTrash.append("blue")  # ideally this would be determined dynamically
@@ -184,7 +184,7 @@ class TrashBot:
 
     def wander(s):
         d = s.mainBot.readDistance()
-        print("wandering", "distance:", d)
+        print("   *a*  wandering", "distance:", d)
         if d < 50:
             s.mainBot.turnLeft(10, runTime=1)
             leftDistance = s.mainBot.readDistance()
@@ -205,7 +205,7 @@ class TrashBot:
         horizontal_diff = (trash.x - grabber_x)  # this is negative when the bot needs to turn left
         vertical_diff = (trash.y - grabber_y)  # this is negative when the bot needs to drive forward
         horizontal_impulse = s.grabber_hmap(horizontal_diff)  # maps negatives to negatives
-        vertical_impulse = s.grabber_vmap(vertical_diff) + 10  # maps negatives to positives
+        vertical_impulse = s.grabber_vmap(vertical_diff) + 5  # maps negatives to positives
 
         # if the left motor < power than right motor, then bot turns left.
         # so, if horizontal_impulse is negative, these equations give left_speed < right_speed
@@ -225,7 +225,7 @@ class TrashBot:
         #  this shouldn't happen often, but not using a state for this adds a little resilience
 
     def goToDumpster(s):
-        print("going to dumpster")
+        print("   *a*  going to dumpster")
         horizontal_diff = (s.sensorResult.dumpsterX - s.CAM_RES_X/2)
         horizontal_impulse = s.dumpster_hmap(horizontal_diff)
         forward_impulse = 10  # should always drive forward while returning to the dumpster
