@@ -19,10 +19,10 @@ class TrashBot:
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.CAM_RES_X, self.CAM_RES_Y = 320, 200
         g_x = self.CAM_RES_X/2
-        g_y = 200
+        g_y = 175  # empirical
         # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
-        self.GRABBER_DIMS = (165, 15)  # found through experiment
+        self.GRABBER_DIMS = (165, 30)  # found through experiment
         # self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
@@ -73,6 +73,7 @@ class TrashBot:
                             # recognize their colors by their signature, and report the color here.
                             # in practice, we're only detecting blue objects.
             area_on_screen = width * height
+            print("trash", color, x, y, area_on_screen)
             if color not in s.foundTrash and area_on_screen >= s.AREA_THRESHOLD:
                 # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
                 # TODO: check this assumption
@@ -96,6 +97,7 @@ class TrashBot:
             width = s.pixy.value(3)
             height = s.pixy.value(4)
             area_on_screen = width * height
+            print("dumpster", x, area_on_screen)
             if area_on_screen > s.AREA_THRESHOLD:
                 dumpsterX = x
         foundDumpster = dumpsterX > 0
