@@ -31,7 +31,7 @@ class TrashBot:
         self.targetTrashNumber = None  # index into PIXY_TRASH_MODES
         # self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
-        self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("yellow", "SIG3"))
+        self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("orange", "SIG3"), ("green", "SIG5"), ("pink", "SIG6"), ("yellow", "SIG4"))
         self.GRABBING_DEGREES = -400
         self.AREA_THRESHOLD = 50  # this is the area on screen which a reported object must occupy to be detected. Helps to filter out noise
 
@@ -59,14 +59,14 @@ class TrashBot:
         self.state = State.SEARCHING_FOR_TRASH
         self.targetTrashNumber = -1
         self.nextTrashMode()  # updates the pixycam mode to detect the next signature of trash
-        self.foundTrash = []
+        self.foundTrash = []  # stores strings (the color of a found ball), not TrashObject's
         self.sensorResult = None
         self.halt = False  # emergency stop
         self.mainBot.zeroPointer()
 
     def sense(s):
         trashList = []
-        if s.pixy.mode == s.PIXY_TRASH_MODE:
+        if s.pixy.mode != s.PIXY_DUMPSTER_MODE:
             # should fill with 'TrashObject' objects based on objects camera can see.
             # as we currently understand it, the lego API only allows the pixycam to report one
             # detected object at a time, so in practice, this list is always either empty or len 1
@@ -74,13 +74,17 @@ class TrashBot:
             y = s.pixy.value(2)
             width = s.pixy.value(3)
             height = s.pixy.value(4)
-            color = "blue"  # ideally, the pixycam would find trash objects of multiple colors,
+            color = s.currentTrashColor()
+            # color = "blue"  # ideally, the pixycam would find trash objects of multiple colors,
                             # recognize their colors by their signature, and report the color here.
                             # in practice, we're only detecting blue objects.
             area_on_screen = width * height
             print("   *s*  trash", color, x, y, area_on_screen)
             if color not in s.foundTrash and area_on_screen >= s.AREA_THRESHOLD:
                 trashList.append(TrashObject(color, x, y))
+                # note that the pixycam implementation of color detection doesn't actually need the "if color not in
+                #  s.foundTrash" check, because it can only look for one color at a time. Still, it makes conceptual
+                #  sense to include
         seesTrash = len(trashList) > 0
 
         # checks if any of the discovered trash objects are within the grabber's grasp
@@ -167,8 +171,7 @@ class TrashBot:
         s.mainBot.forward(0)
         s.mainBot.pointerTurnBy(-s.GRABBING_DEGREES, speed=20)
         # s.foundTrash.append("blue")  # ideally this would be determined dynamically
-        current_sought_color = s.PIXY_TRASH_MODES[s.targetTrashNumber][0]
-        s.foundTrash.append(current_sought_color)
+        s.foundTrash.append(s.currentTrashColor())
         s.mainBot.backward(10, runTime=2)
         s.originalAngle = s.mainBot.readGyroAngle()
         s.state = State.EXITING_DUMPSTER
@@ -248,6 +251,9 @@ class TrashBot:
         else:
             color, s.pixy.mode = s.PIXY_TRASH_MODES[s.targetTrashNumber]
             s.mainBot.snd.speak("seeking " + color + " trash")
+
+    def currentTrashColor(s):
+        return s.PIXY_TRASH_MODES[s.targetTrashNumber][0]
 
 ### End class
 
