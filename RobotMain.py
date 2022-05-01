@@ -173,10 +173,10 @@ class TrashBot:
         currentAngle = s.mainBot.readGyroAngle()
         if abs(s.originalAngle - currentAngle) >= 180:
             s.mainBot.forward(0)
-            s.mainBot.snd.speak("trash collected")
-            s.halt = True
-            # s.pixy.mode = s.PIXY_TRASH_MODE
-            # s.state = State.SEARCHING_FOR_TRASH
+            # s.mainBot.snd.speak("trash collected")
+            # s.halt = True
+            s.pixy.mode = s.PIXY_TRASH_MODE
+            s.state = State.SEARCHING_FOR_TRASH
         else:
             s.mainBot.turnRight(4)
 
