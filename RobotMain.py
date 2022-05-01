@@ -22,8 +22,8 @@ class TrashBot:
         g_y = 175  # empirical
         # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
-        # self.GRABBER_DIMS = (82, 19)  # found through experiment
-        self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
+        self.GRABBER_DIMS = (165, 25)  # found through experiment
+        # self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
         self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=2.5, inverse=True)
@@ -49,6 +49,8 @@ class TrashBot:
             if s.mainBot.bttn.backspace:
                 s.halt = True
         print("trash objects found:", len(s.foundTrash))
+        s.mainBot.stop()
+        s.initialize()
         s.mainBot.stop()
 
     def initialize(self):
@@ -203,7 +205,7 @@ class TrashBot:
         horizontal_diff = (trash.x - grabber_x)  # this is negative when the bot needs to turn left
         vertical_diff = (trash.y - grabber_y)  # this is negative when the bot needs to drive forward
         horizontal_impulse = s.grabber_hmap(horizontal_diff)  # maps negatives to negatives
-        vertical_impulse = s.grabber_vmap(vertical_diff) + 2.5  # maps negatives to positives
+        vertical_impulse = s.grabber_vmap(vertical_diff) + 10  # maps negatives to positives
 
         # if the left motor < power than right motor, then bot turns left.
         # so, if horizontal_impulse is negative, these equations give left_speed < right_speed

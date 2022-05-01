@@ -202,6 +202,7 @@ class SturdyBot(object):
 
     def zeroPointer(self):
         """Turns the medium motor/pointer to the zero angle position. """
+        print("initial pointer position:", self.mediumMotor.position)
         if not self.mediumMotor.position == 0:
             self.mediumMotor.on_to_position(30, 0)
 
