@@ -22,8 +22,8 @@ class TrashBot:
         g_y = 175  # empirical
         # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
-        self.GRABBER_DIMS = (165, 30)  # found through experiment
-        # self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
+        # self.GRABBER_DIMS = (82, 19)  # found through experiment
+        self.GRABBER_DIMS = (165, 38)  # actual data. found by analyzing screenshot
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
         self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=2.5, inverse=True)
@@ -75,9 +75,6 @@ class TrashBot:
             area_on_screen = width * height
             print("trash", color, x, y, area_on_screen)
             if color not in s.foundTrash and area_on_screen >= s.AREA_THRESHOLD:
-                # I'm assuming here that pixy will report x, y == 0, 0 if no object is found
-                # TODO: check this assumption
-                # TODO: add heuristic to refuse to add trash objects whose on-screen area is too small
                 trashList.append(TrashObject(color, x, y))
         seesTrash = len(trashList) > 0
 
@@ -134,6 +131,7 @@ class TrashBot:
 
     def grabTrash(s):
         print(" *** Grabbing trash")
+        s.mainBot.forward(10, runTime=1.5)  # ensures that the ball is definitely in grabber's well
         s.mainBot.forward(0)  # equivalent to stopping
         s.mainBot.pointerTurnBy(s.GRABBING_DEGREES, speed=20)
         s.state = State.SEARCHING_FOR_DUMPSTER
@@ -166,14 +164,15 @@ class TrashBot:
         # s.foundTrash.append("blue")  # ideally this would be determined dynamically
         s.foundTrash.append("placeholder")
         s.mainBot.backward(10, runTime=2)
-        s.state = State.EXITING_DUMPSTER
         s.originalAngle = s.mainBot.readGyroAngle()
+        s.state = State.EXITING_DUMPSTER
 
     def exitDumpster(s):
         currentAngle = s.mainBot.readGyroAngle()
         if abs(s.originalAngle - currentAngle) >= 180:
-            s.state = State.SEARCHING_FOR_TRASH
+            s.mainBot.forward(0)
             s.pixy.mode = s.PIXY_TRASH_MODE
+            s.state = State.SEARCHING_FOR_TRASH
         else:
             s.mainBot.turnRight(4)
 
