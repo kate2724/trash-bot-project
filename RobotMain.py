@@ -18,7 +18,7 @@ class TrashBot:
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.CAM_RES_X, self.CAM_RES_Y = 320, 200
-        g_x = self.CAM_RES_X/2
+        g_x = self.CAM_RES_X/2 - 4
         g_y = 175  # empirical
         # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
@@ -27,7 +27,7 @@ class TrashBot:
         # self.GRABBER_DIMS = (200, 70)  # test values, intentionally too large
         self.grabber_hmap = linearMap(min_in=-g_x, max_in=g_x, min_out=-5, max_out=5)
         self.grabber_vmap = linearMap(min_in=-(self.CAM_RES_Y - g_y), max_in=self.CAM_RES_Y - g_y, min_out=-2.5, max_out=5, inverse=True)
-        self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-2, max_out=2)
+        self.dumpster_hmap = linearMap(min_in=-self.CAM_RES_X/2, max_in=self.CAM_RES_X/2, min_out=-5, max_out=5)
         self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
         self.GRABBING_DEGREES = -400
@@ -173,8 +173,10 @@ class TrashBot:
         currentAngle = s.mainBot.readGyroAngle()
         if abs(s.originalAngle - currentAngle) >= 180:
             s.mainBot.forward(0)
-            s.pixy.mode = s.PIXY_TRASH_MODE
-            s.state = State.SEARCHING_FOR_TRASH
+            s.mainBot.snd.speak("trash collected")
+            s.halt = True
+            # s.pixy.mode = s.PIXY_TRASH_MODE
+            # s.state = State.SEARCHING_FOR_TRASH
         else:
             s.mainBot.turnRight(4)
 
