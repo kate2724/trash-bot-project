@@ -18,7 +18,7 @@ class TrashBot:
         self.originalAngle = None
         # pixy cam is 320 by 200, and it measures coordinates starting from (0, 0) in the top left.
         self.CAM_RES_X, self.CAM_RES_Y = 320, 200
-        g_x = self.CAM_RES_X/2 - 4
+        g_x = self.CAM_RES_X/2 - 30
         g_y = 175  # empirical
         # g_y = 150  # position read off of the image
         self.GRABBER_CENTROID = (g_x, g_y)
@@ -31,8 +31,9 @@ class TrashBot:
         self.targetTrashNumber = None  # index into PIXY_TRASH_MODES
         # self.PIXY_TRASH_MODE = "SIG1"
         self.PIXY_DUMPSTER_MODE = "SIG2"
-        self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("orange", "SIG3"), ("green", "SIG5"), ("pink", "SIG6"), ("yellow", "SIG4"))
-        self.GRABBING_DEGREES = -400
+        # self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("orange", "SIG3"), ("green", "SIG5"), ("pink", "SIG6"), ("yellow", "SIG4"))
+        self.PIXY_TRASH_MODES = self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("orange", "SIG3"))
+        self.GRABBING_DEGREES = -425
         self.AREA_THRESHOLD = 50  # this is the area on screen which a reported object must occupy to be detected. Helps to filter out noise
 
     ##########################
@@ -50,15 +51,16 @@ class TrashBot:
             elapsedTime = time.time() - startTime
             if s.mainBot.bttn.backspace:
                 s.halt = True
-        print("trash objects found:", len(s.foundTrash))
         s.mainBot.stop()
-        s.initialize()
+        print("trash objects found:", len(s.foundTrash))
+        s.mainBot.snd.speak("found " + str(len(s.foundTrash)) + " trash objects")
+        s.initialize(chatty=False)
         s.mainBot.stop()
 
-    def initialize(self):
+    def initialize(self, chatty=True):
         self.state = State.SEARCHING_FOR_TRASH
         self.targetTrashNumber = -1
-        self.nextTrashMode()  # updates the pixycam mode to detect the next signature of trash
+        self.nextTrashMode(chatty)  # updates the pixycam mode to detect the next signature of trash
         self.foundTrash = []  # stores strings (the color of a found ball), not TrashObject's
         self.sensorResult = None
         self.halt = False  # emergency stop
@@ -253,14 +255,16 @@ class TrashBot:
         right_speed = forward_impulse - horizontal_impulse
         s.mainBot.curve(left_speed, right_speed)
 
-    def nextTrashMode(s):
+    def nextTrashMode(s, chatty=True):
         s.targetTrashNumber += 1
         if s.targetTrashNumber >= len(s.PIXY_TRASH_MODES):
             # out of modes, so found all trash!
+            s.mainBot.snd.speak("all trash found")
             s.halt = True
         else:
             color, s.pixy.mode = s.PIXY_TRASH_MODES[s.targetTrashNumber]
-            s.mainBot.snd.speak("seeking " + color + " trash")
+            if chatty:
+                s.mainBot.snd.speak("seeking " + color + " trash")
             # print("pixy mode", s.pixy.mode)
 
     def currentTrashColor(s):
