@@ -62,7 +62,8 @@ class TrashBot:
         self.foundTrash = []  # stores strings (the color of a found ball), not TrashObject's
         self.sensorResult = None
         self.halt = False  # emergency stop
-        self.mainBot.zeroPointer()
+        if abs(self.mainBot.mediumMotor.position) > 10:
+            self.mainBot.zeroPointer()
 
     def sense(s):
         trashList = []
@@ -140,7 +141,9 @@ class TrashBot:
 
     def grabTrash(s):
         print("   *a*  Grabbing trash")
-        s.mainBot.forward(10, runTime=1.5)  # ensures that the ball is definitely in grabber's well
+        # s.mainBot.forward(10, runTime=1.5)  # ensures that the ball is definitely in grabber's well
+        s.mainBot.forward(5)
+        time.sleep(3)
         s.mainBot.forward(0)  # equivalent to stopping
         s.mainBot.pointerTurnBy(s.GRABBING_DEGREES, speed=20)
         s.state = State.SEARCHING_FOR_DUMPSTER
@@ -172,13 +175,20 @@ class TrashBot:
         s.mainBot.pointerTurnBy(-s.GRABBING_DEGREES, speed=20)
         # s.foundTrash.append("blue")  # ideally this would be determined dynamically
         s.foundTrash.append(s.currentTrashColor())
-        s.mainBot.backward(10, runTime=2)
+        # s.mainBot.backward(10, runTime=2)  # this doesn't always work, for some reason
+        # backs up for 2 seconds
+        s.mainBot.backward(10)
+        time.sleep(2)
+        s.mainBot.forward(0)
+        # transitions into exit dumpster state
         s.originalAngle = s.mainBot.readGyroAngle()
         s.state = State.EXITING_DUMPSTER
 
     def exitDumpster(s):
         currentAngle = s.mainBot.readGyroAngle()
-        if abs(s.originalAngle - currentAngle) >= 180:
+        diff = abs(s.originalAngle - currentAngle)
+        print("   *a*  exiting, angle diff:", diff)
+        if diff >= 180:
             s.mainBot.forward(0)
             # s.mainBot.snd.speak("trash collected")
             # s.halt = True
@@ -251,6 +261,7 @@ class TrashBot:
         else:
             color, s.pixy.mode = s.PIXY_TRASH_MODES[s.targetTrashNumber]
             s.mainBot.snd.speak("seeking " + color + " trash")
+            # print("pixy mode", s.pixy.mode)
 
     def currentTrashColor(s):
         return s.PIXY_TRASH_MODES[s.targetTrashNumber][0]
