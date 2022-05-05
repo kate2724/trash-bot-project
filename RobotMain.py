@@ -34,7 +34,7 @@ class TrashBot:
         # self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("orange", "SIG3"), ("green", "SIG5"), ("pink", "SIG6"), ("yellow", "SIG4"))
         self.PIXY_TRASH_MODES = self.PIXY_TRASH_MODES = (("blue", "SIG1"), ("orange", "SIG3"))
         self.GRABBING_DEGREES = -425
-        self.AREA_THRESHOLD = 50  # this is the area on screen which a reported object must occupy to be detected. Helps to filter out noise
+        self.AREA_THRESHOLD = 100  # this is the area on screen which a reported object must occupy to be detected. Helps to filter out noise
 
     ##########################
     ##### DRIVER METHODS #####
